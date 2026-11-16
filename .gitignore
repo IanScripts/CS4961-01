@@ -1,0 +1,26 @@
+# Generated data and caches
+live/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Credentials and local environment
+.env
+.env.*
+!.env.example
+*.key
+secrets.json
+credentials.json
+
+# Large model downloads
+*.grib
+*.grib2
+*.idx
+
+# Editor files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

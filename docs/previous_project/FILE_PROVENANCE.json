@@ -1,0 +1,110 @@
+[
+  {
+    "source_file": "iem_california.py",
+    "new_file": "src/weather_apis/iem_california.py",
+    "original_sha256": "bba5ad24176d8c7a1ffb68f626d8c442255649e26b0023361474d3dfab0deec7",
+    "adjustments": [
+      "project-root output paths"
+    ]
+  },
+  {
+    "source_file": "synoptic_california.py",
+    "new_file": "src/weather_apis/synoptic_california.py",
+    "original_sha256": "b6108a2e1d1d789d943375a7452e50273322df9d94ff2d00e2b4585c58e975ba",
+    "adjustments": [
+      "project-root output paths"
+    ]
+  },
+  {
+    "source_file": "open_meteo_api.py",
+    "new_file": "src/weather_apis/open_meteo_api.py",
+    "original_sha256": "7f9f323fa0bb3671b8a8e6d79a92b631d2dd9d6976252b1646811ae0a1e682f3",
+    "adjustments": [
+      "project-root output paths"
+    ]
+  },
+  {
+    "source_file": "open_meteo_gfs.py",
+    "new_file": "src/weather_apis/open_meteo_gfs.py",
+    "original_sha256": "d06796fcbdc637247443e1f5bb79fe967e1536d3a04701b07c4dbfd697491579",
+    "adjustments": [
+      "project-root output paths"
+    ]
+  },
+  {
+    "source_file": "noaa_hrrr_california.py",
+    "new_file": "src/weather_apis/noaa_hrrr_california.py",
+    "original_sha256": "46915b5b5d74323a165c7dbd5a47b92192e46dc83028bca5efd3999aec64a8f3",
+    "adjustments": [
+      "project-root output paths"
+    ]
+  },
+  {
+    "source_file": "open_meteo_fill_gap.py",
+    "new_file": "src/data_processing/open_meteo_fill_gap.py",
+    "original_sha256": "1d9b6082190cd20cac1fe4437389684075b51324f9b7f923640779385964fcec",
+    "adjustments": [
+      "project-root output paths"
+    ]
+  },
+  {
+    "source_file": "open_meteo_merge.py",
+    "new_file": "src/data_processing/open_meteo_merge.py",
+    "original_sha256": "31f2473f2551550e3e81afe55a7c7d25bf04d000d6fda3721872c6696cddc71a",
+    "adjustments": [
+      "project-root output paths"
+    ]
+  },
+  {
+    "source_file": "run_california_sources.py",
+    "new_file": "scripts/run_california_sources.py",
+    "original_sha256": "04301055d99230589685b7793b4765e1e43963f104ab12aefd7c130af7bc555a",
+    "adjustments": [
+      "project-root output paths",
+      "runner collector paths",
+      "script usage help"
+    ]
+  },
+  {
+    "source_file": "validate_california_sources.py",
+    "new_file": "validation/validate_california_sources.py",
+    "original_sha256": "d50b92cd3d07a2a374a557524eac85fd32e91ba85ead724cc7baa8116cfe1456",
+    "adjustments": [
+      "project-root output paths"
+    ]
+  },
+  {
+    "source_file": "validate_hrrr.py",
+    "new_file": "validation/validate_hrrr.py",
+    "original_sha256": "0d68e1828f1ef830762fea91debb56c95505bdbe185f633f177bf5ffe8973b04",
+    "adjustments": [
+      "project-root output paths"
+    ]
+  },
+  {
+    "source_file": "validate_iem.py",
+    "new_file": "validation/validate_iem.py",
+    "original_sha256": "f64c6fbc51b19088285d8d2bd78a6b41dc7fb4110319f11057bb953cc3e77f42",
+    "adjustments": [
+      "project-root output paths"
+    ]
+  },
+  {
+    "source_file": "requirements_data_sources.txt",
+    "new_file": "requirements_data_sources.txt",
+    "original_sha256": "7a9ece7414c834d3dbbc10a58c2b5b9ae2b088d2f9553142fdf3f1ce8ddb7a19",
+    "adjustments": []
+  },
+  {
+    "source_file": "docs/previous_project/CALIFORNIA_DATA_SOURCES.md",
+    "new_file": "docs/previous_project/CALIFORNIA_DATA_SOURCES.md",
+    "original_sha256": "ef94171119c7896579b78ce6c3558423d89faded4b6b99cf07fdc991c1ad8e25",
+    "adjustments": []
+  },
+  {
+    "source_file": "docs/previous_project/README_MULTI_SOURCE_INTEGRATION.md",
+    "new_file": "docs/previous_project/README_MULTI_SOURCE_INTEGRATION.md",
+    "original_sha256": "709163bd6379b232f94957e26383e261911d6ef6a61fcab1e08a67938bf8ba42",
+    "adjustments": []
+  }
+]
