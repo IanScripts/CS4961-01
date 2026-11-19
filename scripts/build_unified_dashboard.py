@@ -1,7 +1,7 @@
 """Build EmberScope: one offline dashboard for independent wildfire research.
 
 Reads the team's existing experimental scores and optional saved forecast/catalog
-CSVs and processed IEM hourly observed station measurements. Does not call APIs, calculate new scores, run or import NFDRS4, or read its
+CSVs and statewide IEM daily observed station measurements. Does not call APIs, calculate new scores, run or import NFDRS4, or read its
 legacy index files. Designed to REPLACE the existing dashboard builder (not add
 another dashboard).
 
@@ -30,13 +30,14 @@ from plotly.subplots import make_subplots
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from src.dashboard.iem_views import read_iem_hourly, summary_html, station_charts
+from src.dashboard.iem_daily_views import statewide_explorer_html  # EmberScope V4 observed weather daily explorer
 DEFAULT_INPUT = ROOT / 'live' / 'experimental_score' / 'open_meteo_daily_scores.csv'
 DEFAULT_FORECAST = ROOT / 'live' / 'open_meteo_socal.csv'
 DEFAULT_CATALOG = (ROOT / 'data' / 'reference' / 'iem_california_station_catalog.csv'
                    if (ROOT / 'data' / 'reference' / 'iem_california_station_catalog.csv').is_file()
                    else ROOT / 'live' / 'california_sources' / 'iem' / 'iem_california_station_catalog.csv')
-DEFAULT_IEM_HOURLY = ROOT / 'live' / 'california_sources' / 'iem' / 'iem_california_hourly.csv'
+DEFAULT_IEM_DAILY = ROOT / 'live' / 'california_sources' / 'iem' / 'iem_daily_station_summary_2025.csv'
+DEFAULT_IEM_QUALITY = ROOT / 'live' / 'california_sources' / 'iem' / 'iem_2025_station_quality_tiers.csv'
 DEFAULT_OUTPUT = ROOT / 'emberscope.html'
 OPEN_METEO_SOURCE = ROOT / 'src' / 'weather_apis' / 'open_meteo_api.py'
 REQUIRED = {'location', 'local_date', 'experimental_score', 'experimental_level',
@@ -275,7 +276,8 @@ def main()->None:
     p.add_argument('--input',type=Path,default=DEFAULT_INPUT)
     p.add_argument('--forecast',type=Path,default=DEFAULT_FORECAST)
     p.add_argument('--catalog',type=Path,default=DEFAULT_CATALOG)
-    p.add_argument('--iem-hourly',type=Path,default=DEFAULT_IEM_HOURLY)
+    p.add_argument('--iem-daily',type=Path,default=DEFAULT_IEM_DAILY)
+    p.add_argument('--iem-quality',type=Path,default=DEFAULT_IEM_QUALITY)
     p.add_argument('--output',type=Path,default=DEFAULT_OUTPUT)
     args=p.parse_args()
     d=read_scores(args.input)
@@ -284,44 +286,16 @@ def main()->None:
     f,forecast_note=read_forecast(args.forecast)
     coords=read_city_coords(OPEN_METEO_SOURCE)
     catalog=read_catalog(args.catalog)
-    try:
-        observations,observed_note=read_iem_hourly(args.iem_hourly)
-    except ValueError as exc:
-        raise SystemExit('Invalid optional IEM hourly CSV: '+str(exc)) from exc
-    observed_ids=set(observations['station_id'].astype(str)) if not observations.empty else set()
+    observed_ids=set()  # EmberScope V4.1 all-station daily explorer (no legacy 2-station panel)
     first,score_id=chart_html(trend_chart(d,cities),include_js=True)
     weather,weather_id=chart_html(weather_chart(d,cities))
     levels,_=chart_html(levels_chart(d,cities))
     multi,_=chart_html(comparison_chart(d,cities))
+    try:
+        daily_html=statewide_explorer_html(args.iem_daily,args.iem_quality,observed_ids=observed_ids)
+    except (OSError, ValueError) as exc:
+        raise SystemExit('Invalid statewide IEM daily summary: '+str(exc)) from exc
     stations,_=chart_html(station_chart(coords,catalog,set(cities),observed_ids))
-    station_observations_html=''
-    station_chart_ids=[]
-    station_ids=[]
-    if not observations.empty:
-        it, iw, station_ids = station_charts(observations)
-        it=style(it,425)
-        iw=style(iw,425)
-        it_html, it_id = chart_html(it)
-        iw_html, iw_id = chart_html(iw)
-        station_chart_ids=[it_id, iw_id]
-        options=''.join(f'<option value="{escape(sid,quote=True)}">{escape(sid)} · '+
-                        escape(str(observations.loc[observations.station_id==sid,'station_name'].iloc[0]))+
-                        '</option>' for sid in station_ids)
-        station_observations_html=(
-            '<article class="card wide"><h2>Historical IEM station measurements</h2>'
-            '<p class="small">'+escape(observed_note)+'</p>'
-            '<label for="iem-location" class="small">Observed station</label> '
-            '<select id="iem-location" class="station-select">'+options+'</select>'
-            '<p class="small">Measurement gaps remain blank; no interpolation. IEM p01i is a reported '
-            'one-hour amount, which may overlap with other reports. Do not sum these values to infer totals.</p>'
-            +it_html+'</article><article class="card wide">'+iw_html+'</article>'
-            '<article class="card wide"><h2>Observed station-hour quality</h2>'+
-            summary_html(observations)+'</article>'
-        )
-    else:
-        station_observations_html=(
-            '<article class="card wide"><h2>Historical IEM station measurements</h2>'
-            '<p class="small">'+escape(observed_note)+'</p></article>')
     forecast_html=''
     forecast_ids=[]
     if not f.empty:
@@ -342,7 +316,7 @@ def main()->None:
     types=', '.join(escape(x) for x in using_types) if using_types else 'Unspecified in score CSV'
     select=''.join(f'<option value="{escape(city,quote=True)}">{escape(city)}</option>' for city in cities)
     catalog_note=(f'{len(catalog)} IEM California catalog entries. '
-                  f'{len(observed_ids)} station(s) with saved, validated historical hourly observations.'
+                  f'{len(observed_ids)} station(s) with available 2025 observed daily summaries.'
                   if not catalog.empty else 'No IEM station catalog loaded. Only existing Open-Meteo model coordinates are displayed.')
     notes=(
         '<strong>Data classification:</strong> '+types+'<br><strong>Source:</strong> '+provenances+
@@ -397,12 +371,12 @@ footer{padding:26px 0;font-size:12px;color:var(--muted);line-height:1.65}
 <article class="card wide"><h2>Historical classification summary</h2><p class="small">These categories reflect an uncalibrated weather formula, not observed fire occurrence.</p>$levels_html</article>
 <article class="card wide"><h2>Data provenance</h2><p class="small">$source_note</p><p class="small">Daily weather scores require complete calendar days in the original scoring adapter, including daylight saving adjustments. Missing days are excluded rather than filled with zeroes.</p></article></div></section>
 <section class="tab" id="panel-forecasts" role="tabpanel"><article class="card wide"><h2>Saved weather forecasts</h2><p class="small">$forecast_note</p><p class="small">Forecasts are weather variables only. We do not create future EmberScope scores from them in this dashboard.</p></article>$forecast_html</section>
-<section class="tab" id="panel-stations" role="tabpanel"><div class="cards"><article class="card wide"><h2>Location and station explorer</h2><p class="small">Offline longitude/latitude locator, not a street or terrain map. Orange points: Open-Meteo model coordinates. Blue: IEM catalog-only stations. Green: IEM stations with saved historical hourly observations. None means a live wildfire alert.</p>$station_html</article><article class="card wide"><p class="small">$catalog_note</p><p class="small">Model query coordinates and physical IEM stations are different location types. Station observations appear below when the standardized IEM CSV is available; station-derived fire-danger scores are not yet calculated.</p></article>$iem_observations_html</div></section>
+<section class="tab" id="panel-stations" role="tabpanel"><div class="cards">$iem_daily_html<article class="card wide"><h2>Location and station explorer</h2><p class="small">Offline longitude/latitude locator, not a street or terrain map. Orange points: Open-Meteo model coordinates. Blue: IEM catalog-only stations. Green: IEM stations with 2025 observed daily summaries. None means a live wildfire alert.</p>$station_html</article><article class="card wide"><p class="small">$catalog_note</p><p class="small">Model query coordinates and physical IEM stations are different location types. The statewide 2025 IEM observed-weather explorer appears above. Station-derived fire-danger scores are not yet calculated.</p></article></div></section>
 <section class="tab" id="panel-compare" role="tabpanel"><div class="cards"><article class="card wide"><h2>All-location comparison</h2><p class="small">Same experimental scoring method for each Open-Meteo location. Do not interpret relative scores as measured fire frequency.</p>$compare_html</article>
 <article class="card wide"><h2>Location summary</h2><div class="scroll"><table><thead><tr><th>Location</th><th>Days</th><th>Mean score</th><th>Max score</th><th>High+ days</th><th>Last day</th></tr></thead><tbody>$table_rows</tbody></table></div></article></div></section>
 <section class="tab" id="panel-sources" role="tabpanel"><article class="card wide"><h2>What we have vs. what the dashboard currently uses</h2>
-<div class="pills"><span class="pill">Open-Meteo historical: plotted</span><span class="pill">Open-Meteo forecast: optional</span><span class="pill">IEM catalog: optional</span><span class="pill">IEM saved hourly observations: optional</span></div>
-<div class="gridtext"><div class="source"><h3>IEM ASOS/AWOS</h3><p>Existing observational collector. Saved hourly station weather and quality summaries are plotted when available; they are not turned into scores yet.</p></div>
+<div class="pills"><span class="pill">Open-Meteo historical: plotted</span><span class="pill">Open-Meteo forecast: optional</span><span class="pill">IEM catalog: optional</span><span class="pill">IEM statewide 2025 daily observations: plotted</span></div>
+<div class="gridtext"><div class="source"><h3>IEM ASOS/AWOS</h3><p>Existing observational collector. Statewide 2025 daily station weather and quality summaries are plotted; these are not wildfire scores.</p></div>
 <div class="source"><h3>Synoptic</h3><p>Existing station-observation collector. Not plotted until validated station records are loaded.</p></div>
 <div class="source"><h3>Open-Meteo</h3><p>Historical modeled weather powers experimental scores. Optional saved recent forecast weather powers the Forecasts tab.</p></div>
 <div class="source"><h3>Open-Meteo GFS</h3><p>Existing longer-range forecast collector. Not included in this dashboard's current forecast chart.</p></div>
@@ -415,15 +389,6 @@ footer{padding:26px 0;font-size:12px;color:var(--muted);line-height:1.65}
  const names=$city_json;
  const figIds=$figure_ids;
  const picker=document.getElementById('location');
- const iemPicker=document.getElementById('iem-location');
- const iemNames=$iem_station_json;
- const iemFigs=$iem_figure_ids;
- if(iemPicker){
-   iemPicker.addEventListener('change',()=>{
-     const i=iemNames.indexOf(iemPicker.value); if(i<0 || !window.Plotly) return;
-     iemFigs.forEach(id=>Plotly.restyle(id,{visible:Array.from({length:2*iemNames.length},(_,j)=>Math.floor(j/2)===i)}));
-   });
- }
  const panels=Array.from(document.querySelectorAll('.tab'));
  const buttons=Array.from(document.querySelectorAll('[data-panel]'));
  function updateLocation(){
@@ -461,9 +426,8 @@ footer{padding:26px 0;font-size:12px;color:var(--muted);line-height:1.65}
         trend_html=first,weather_html=weather,levels_html=levels,
         compare_html=multi,station_html=stations,forecast_html=forecast_html,
         forecast_note=escape(forecast_note),catalog_note=escape(catalog_note),source_note=notes,
-        iem_observations_html=station_observations_html,
-        iem_station_json=json.dumps(station_ids,ensure_ascii=False).replace('</','<\\/'),
-        iem_figure_ids=json.dumps(station_chart_ids),
+        iem_daily_html=daily_html,
+
         table_rows=score_rows(d,cities),source_file=escape(str(args.input)),
         city_json=json.dumps(cities,ensure_ascii=False).replace('</','<\\/'),
         figure_ids=json.dumps({'score':score_id,'weather':weather_id,'forecast':forecast_ids}),
@@ -473,7 +437,7 @@ footer{padding:26px 0;font-size:12px;color:var(--muted);line-height:1.65}
     print(f'Built unified EmberScope dashboard: {args.output}')
     print(f'Scores: {len(d)} across {len(cities)} modeled locations; date range {start_day:%Y-%m-%d} to {report_day:%Y-%m-%d}')
     print(f'Optional forecast rows: {len(f)} | optional IEM station catalog rows: {len(catalog)}')
-    print(f'IEM historical observed station-hour rows: {len(observations)} across {len(observed_ids)} stations')
+    print(f'IEM 2025 daily weather: {len(observed_ids)} distinct stations with summaries; the 2-station legacy panel is omitted')
     print('Experimental scores only; no NFDRS4 code, old indexes, or ML predictions included.')
 
 
