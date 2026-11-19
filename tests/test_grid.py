@@ -1,7 +1,7 @@
 
 import unittest
 
-from src.ai_prediction.grid import get_grid_cell
+from src.ai_prediction.grid import get_grid_cell, projected_cell_indices
 
 
 class TestGrid(unittest.TestCase):
@@ -28,6 +28,11 @@ class TestGrid(unittest.TestCase):
 
         self.assertNotEqual(downtown, beverly_hills)
 
+    def test_projected_cell_indices(self):
+        self.assertEqual(projected_cell_indices(5000, 15000), (0, 1))
+        self.assertEqual(projected_cell_indices(15000, 15000), (1, 1))
+        self.assertEqual(projected_cell_indices(-5000, 15000), (-1, 1))
+        self.assertEqual(projected_cell_indices(10000, 20000), (1, 2))
 
 if __name__ == "__main__":
     unittest.main()
