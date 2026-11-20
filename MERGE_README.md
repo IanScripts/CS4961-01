@@ -1,26 +1,59 @@
-# Additions to CS4961-01 (phase 1, no overwrites)
+# CS4961-01 — Wildfire Prediction
 
-This is an **additive** package to extract into the root of your **existing cloned** `CS4961-01-git` repository. It intentionally does **not** contain your five existing API scripts, redundant EmberScope `weather.py`, standalone `server.py`/`static/`, NFDRS4 upstream code, or any credentials.
+## Requirements
 
-Included:
+- Python 3
+- Required Python packages (see `requirements.txt`)
 
-- `src/wildfire_engine/experimental_score.py`: teammate's EmberScope four-feature experimental scoring implementation, copied from their ZIP; retain attribution
-- `src/fire_data/fire_sources.py`: teammate's CAL FIRE historical geography / optional NASA FIRMS data-source adapters
-- `scripts/score_open_meteo_csv.py`: new adapter that uses your **existing Open-Meteo CSV**, not a duplicate API integration
-- `tests/`: teammate's unit tests adapted to the new import paths, plus new adapter tests
-- `docs/PHASE1_INTEGRATION.md`: ownership, scope, priority and runbook
+## Setup
 
-Before adding, have the teammate confirm that these are their original files and they permit their inclusion and attribution. The scripts are in an offline-tested integration candidate; live API requests are not verified.
+```bash
+git clone https://github.com/IanScripts/CS4961-01.git
+cd CS4961-01
+pip install -r requirements.txt
+```
 
-PowerShell:
+## Running the Project
 
-```powershell
-cd "C:\Users\ianbp\Downloads\CS4961-01-git"
-# Extract this ZIP into the current directory, preserving folders
-python -m unittest discover -s tests -p 'test*.py' -v
-# Requires existing dependencies (including pandas):
+**1. Collect weather data**
+
+```cmd
 python src/weather_apis/open_meteo_api.py
+```
+
+**2. Generate experimental wildfire scores**
+
+```cmd
 python scripts/score_open_meteo_csv.py
 ```
 
-Review with `git status --short`, then commit to a feature branch after passing tests. The new files don't overwrite previously committed files.
+**3. Open the EmberScope dashboard (Windows)**
+
+```cmd
+start "" "dashboard.html"
+```
+
+**4. Run tests (optional)**
+
+```cmd
+python -m unittest discover -s tests -p "test*.py"
+```
+
+## Notes
+
+- Dashboard HTML files must already exist or be generated before opening.
+- The AI research dashboard requires the saved prediction CSV, metrics JSON, and Census county boundaries.
+```cmd
+python scripts/train_weather_baseline.py
+```
+```cmd
+mkdir wildfire-datasets\boundaries
+curl -L "https://www2.census.gov/geo/tiger/GENZ2024/shp/cb_2024_us_county_500k.zip" -o "wildfire-datasets\boundaries\counties_2024.zip"
+```
+```cmd
+python -m scripts.export_ai_dashboard
+```
+```cmd
+start "" "data\ai\weather_baseline_v1\ai_map_preview.html"
+```
+- The wildfire scores are experimental and should not be treated as official fire warnings.
