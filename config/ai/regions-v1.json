@@ -1,0 +1,62 @@
+
+{
+  "config_version": "1.0",
+  "dataset_name": "socal_wildfire_occurrence",
+
+  "sources": {
+    "wildfires": "wildfire-datasets/FPA_FOD_20260615.gpkg",
+    "counties": "wildfire-datasets/boundaries/counties_2024.zip"
+  },
+
+  "geography": {
+    "grid_crs": "EPSG:5070",
+    "grid_size_meters": 10000,
+    "grid_origin_meters": [0, 0],
+    "buffer_meters": 10000,
+
+    "evaluation_county": "06037",
+
+    "training_counties": {
+      "06111": "Ventura",
+      "06083": "Santa Barbara",
+      "06059": "Orange",
+      "06065": "Riverside",
+      "06071": "San Bernardino",
+      "06073": "San Diego",
+      "06025": "Imperial",
+      "06029": "Kern"
+    }
+  },
+
+  "pilot": {
+    "target_cells": 12,
+    "include_la_audit": true,
+
+    "windows": [
+      {
+        "name": "spring_2018",
+        "start_date": "2018-03-04",
+        "end_date": "2018-03-17"
+      },
+      {
+        "name": "fall_2018",
+        "start_date": "2018-10-28",
+        "end_date": "2018-11-10"
+      }
+    ]
+  },
+
+  "evaluation": {
+    "training_years": [2010, 2018],
+    "validation_years": [2019, 2021],
+    "la_holdout_years": [2022, 2024],
+    "la_holdout_locked": true
+  },
+
+  "outputs": {
+    "directory": "data/ai/regional_v1",
+    "grid_cells": "grid_cells.csv",
+    "fire_labels": "fire_labels.csv",
+    "manifest": "manifest.json"
+  }
+}
